@@ -39,17 +39,67 @@ function woocommerce_addon_deals_setting_page() {
             <input type="number" name="addon_deal_percent_discount" value="<?php echo esc_attr(get_option('addon_deal_percent_discount', 10)); ?>" />
             <h2>จำนวนวินาทีนับถอยหลังก่อนหมดเวลา (Timeout):</h2>
             <input type="number" name="addon_deal_timeout" value="<?php echo esc_attr(get_option('addon_deal_timeout', 180)); ?>" />
-            <h2>URL ภาพ Banner:</h2>
-            <input type="text" name="addon_deal_banner_url" value="<?php echo esc_attr(get_option('addon_deal_banner_url', "https://www.worldpools.co.th/wp-content/uploads/2026/04/addon-deal-new.jpg")); ?>" />
+            <h2>ภาพ Banner ดีลพิเศษ:</h2>
+            <div class="banner-upload-wrapper">
+                <input type="text" name="addon_deal_banner_url" id="addon_deal_banner_url" 
+                    value="<?php echo esc_attr(get_option('addon_deal_banner_url', '')); ?>" 
+                    style="width: 70%;" />
+                
+                <button type="button" class="button" id="upload_banner_button">เลือกรูปภาพ...</button>
+                
+                <div id="banner_preview" style="margin-top: 10px;">
+                    <?php $banner_url = get_option('addon_deal_banner_url'); ?>
+                    <?php if ($banner_url) : ?>
+                        <img src="<?php echo esc_url($banner_url); ?>" style="max-width: 300px; border: 1px solid #ccc;" />
+                    <?php endif; ?>
+                </div>
+            </div>
             <br>
             <?php submit_button('บันทึกการเปลี่ยนแปลง'); ?>
             <hr>
             <p>Github Repository: <a href="https://github.com/sunny420x/woocommerce-addon-deals" target="_blank">github.com/sunny420x/woocommerce-addon-deals</a></p>
         </form>
+
+        <script type="text/javascript">
+        jQuery(document).ready(function($){
+            $('#upload_banner_button').click(function(e) {
+                e.preventDefault();
+                
+                // สร้าง Media Frame
+                var image_frame = wp.media({
+                    title: 'เลือกรูปภาพ Banner',
+                    multiple: false,
+                    library: { type: 'image' }
+                });
+
+                // เมื่อเลือกรูปภาพเสร็จแล้ว
+                image_frame.on('select', function() {
+                    var selection = image_frame.state().get('selection').first().toJSON();
+                    var image_url = selection.url;
+
+                    // 1. เอา URL ไปใส่ใน Input
+                    $('#addon_deal_banner_url').val(image_url);
+                    
+                    // 2. แสดงตัวอย่างรูปภาพ (Preview)
+                    $('#banner_preview').html('<img src="'+image_url+'" style="max-width: 300px; border: 1px solid #ccc;" />');
+                });
+
+                image_frame.open();
+            });
+        });
+        </script>
     </div>
     <?php
 }
 
+add_action('admin_enqueue_scripts', 'addon_deal_setting_load_media_picker');
+function addon_deal_setting_load_media_picker($hook) {
+    // โหลดเฉพาะในหน้า Setting ของเรา (กันไปตีกับหน้าอื่น)
+    if ($hook !== 'woocommerce-addon-deals-settings') { // เปลี่ยนชื่อ slug ให้ตรงกับของพี่
+        return;
+    }
+    wp_enqueue_media();
+}
 
 add_action('admin_init', 'woocommerce_addon_deals_setting_init');
 
