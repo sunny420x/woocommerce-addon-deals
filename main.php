@@ -25,13 +25,31 @@ function get_worldchem_addon_deals_html() {
 
     if (empty($results)) return '<p style="text-align:center;">ขออภัย ดีลพิเศษหมดชั่วคราว</p>';
 
-    $html = '<div class="addon-deal-holder">';
-    foreach ($results as $res) {
-        $id = $res->ID;
+    $product_ids = array_column($results, 'ID');
+    
+    $html = '';
+    $html .= render_addon_item_cards($product_ids); // เรียกใช้ตัว Render
+
+    return $html;
+}
+
+// 2. ลงทะเบียน AJAX Endpoint
+add_action('wp_ajax_refresh_addon_deals', 'ajax_refresh_addon_deals');
+add_action('wp_ajax_nopriv_refresh_addon_deals', 'ajax_refresh_addon_deals');
+function ajax_refresh_addon_deals() {
+    echo get_worldchem_addon_deals_html();
+    wp_die();
+}
+
+function render_addon_item_cards($product_ids) {
+    global $wpdb;
+    $html = '';
+
+    foreach ($product_ids as $id) {
         $product = wc_get_product($id);
         if (!$product) continue;
 
-        // --- (โค้ดสร้างคูปองเดิมของพี่ ยกมาไว้ตรงนี้ทั้งหมด) ---
+        // --- 1. Logic คูปอง (ยกมาจากโค้ดเดิมของพี่) ---
         $prefix = 'D20-' . $id . '-';
         $existing_coupon_code = $wpdb->get_var($wpdb->prepare("SELECT post_title FROM {$wpdb->prefix}posts p INNER JOIN {$wpdb->prefix}postmeta pm ON p.ID = pm.post_id WHERE p.post_type = 'shop_coupon' AND p.post_status = 'publish' AND p.post_title LIKE %s AND pm.meta_key = 'usage_count' AND CAST(pm.meta_value AS UNSIGNED) < 1 ORDER BY p.ID DESC LIMIT 1", $prefix . '%'));
         
@@ -49,15 +67,18 @@ function get_worldchem_addon_deals_html() {
             $coupon_code = $existing_coupon_code;
         }
 
+        // --- 2. Logic เช็คราคาและสินค้าในตะกร้า ---
         $special_price = (float) $product->get_price() * 0.9;
         $in_cart = false;
-        foreach (WC()->cart->get_cart() as $item) { if ($item['product_id'] == $id) { $in_cart = true; break; } }
+        foreach (WC()->cart->get_cart() as $item) { 
+            if ($item['product_id'] == $id) { $in_cart = true; break; } 
+        }
 
-        // สร้าง HTML สำหรับแต่ละชิ้น
-        $html .= '<div class="addon-deal-item">';
+        $html .= '<div class="addon-deal-item" data-id="'.$id.'">';
         $html .= '<a href="'.$product->get_permalink().'">'.$product->get_image('thumbnail', array('style' => 'border-radius:8px; margin-bottom:15px; width:100%; height:150px; object-fit:cover;')).'</a>';
         $html .= '<a href="'.$product->get_permalink().'"><h5 class="addon-deal-name">'.$product->get_name().'</h5></a>';
-        $html .= '<span class="addon-deal-price"><span style="font-size: 1.2rem;">฿</span> '.$special_price.' <del style="color:#bbb; font-weight:normal; font-size:0.7em; margin-left:5px;">฿ '.$product->get_price().'</del></span>';
+        $html .= '<span class="addon-deal-price"><span style="font-size: 1.2rem;">฿</span> '.$special_price.' <del style="color:#bbb; font-weight:normal; font-size:0.7em; margin-left:5px;">฿ '.$product->get_price().'</del> <span class="addon-deal-discount">-10%</span></span>';
+        
         $html .= '<div style="margin-top: auto; padding: 15px;">';
         if ($in_cart) {
             $html .= '<div style="background: #e7f3e8; color: #28a745; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.85em;">สินค้าอยู่ในตะกร้าแล้ว</div>';
@@ -68,17 +89,39 @@ function get_worldchem_addon_deals_html() {
         }
         $html .= '</div></div>';
     }
-    $html .= '</div>';
     return $html;
 }
 
-// 2. ลงทะเบียน AJAX Endpoint
-add_action('wp_ajax_refresh_addon_deals', 'ajax_refresh_addon_deals');
-add_action('wp_ajax_nopriv_refresh_addon_deals', 'ajax_refresh_addon_deals');
-function ajax_refresh_addon_deals() {
-    echo get_worldchem_addon_deals_html();
+function ajax_load_more_addon_deals() {
+    global $wpdb;
+    $category_slug = 'addon-deals';
+    
+    // รับ ID ที่โชว์อยู่แล้วมากันซ้ำ
+    $exclude = isset($_GET['exclude']) ? array_map('intval', explode(',', $_GET['exclude'])) : array();
+    $exclude_sql = !empty($exclude) ? " AND p.ID NOT IN (" . implode(',', $exclude) . ") " : "";
+
+    $results = $wpdb->get_results($wpdb->prepare("
+        SELECT p.ID FROM {$wpdb->prefix}posts p
+        INNER JOIN {$wpdb->prefix}term_relationships tr ON (p.ID = tr.object_id)
+        WHERE p.post_type = 'product' AND p.post_status = 'publish'
+        AND p.ID IN (SELECT object_id FROM {$wpdb->prefix}term_relationships WHERE term_taxonomy_id IN (SELECT term_taxonomy_id FROM {$wpdb->prefix}term_taxonomy WHERE term_id IN (SELECT term_id FROM {$wpdb->prefix}terms WHERE slug = %s)))
+        $exclude_sql
+        GROUP BY p.ID ORDER BY RAND() LIMIT 4
+    ", $category_slug));
+
+    if (empty($results)) {
+        echo 'DONE';
+        wp_die();
+    }
+
+    $product_ids = array_column($results, 'ID');
+    echo render_addon_item_cards($product_ids); // พ่นแค่ตัว Card ออกไปเสียบต่อท้าย
     wp_die();
 }
+
+// อย่าลืมลงทะเบียน AJAX ตัวใหม่
+add_action('wp_ajax_load_more_addon_deals', 'ajax_load_more_addon_deals');
+add_action('wp_ajax_nopriv_load_more_addon_deals', 'ajax_load_more_addon_deals');
 
 // 3. ฟังก์ชันหลักที่หน้า Cart
 add_action('woocommerce_after_cart_table', 'wp_cart_coupon_lucky_deal');
@@ -142,42 +185,79 @@ function wp_cart_coupon_lucky_deal() {
             background: #FBE5F0;
             padding: 2px 5px;
             font-size: 1rem;
+            font-weight: normal;
         }
     </style>
     
     <div class="addon-deal-container">
         <h3 class="addon-deal-heading">🎁 ดีลพิเศษสำหรับคุณ <span id="countdown">3:00</span></h3>
         
-        <?php echo get_worldchem_addon_deals_html(); ?>
+        <div class="addon-deal-holder" id="addon-deals-wrapper">
+            <?php echo get_worldchem_addon_deals_html(); ?>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <span id="load-more-btn" style="color: #333; border: none; padding: 10px 20px; cursor: pointer;">
+                ดูดีลเพิ่มเติม
+            </span>
+        </div>
 
         <script>
-            (function() {
-                let countdown = 180;
-                let countdownEl = document.getElementById("countdown");
-                let wrapper = document.getElementById("addon-deals-wrapper");
+            let countdown = 180;
+            let countdownEl = document.getElementById("countdown");
+            let wrapper = document.getElementById("addon-deals-wrapper");
 
-                const timer = setInterval(() => {
-                    countdown -= 1;
+            const timer = setInterval(() => {
+                countdown -= 1;
+                
+                if(countdown <= 0) {
+                    // แทนที่จะ Reload หน้า ให้ยิง AJAX แทน
+                    wrapper.style.opacity = '0.5'; // ทำจางๆ ระหว่างโหลด
                     
-                    if(countdown <= 0) {
-                        // แทนที่จะ Reload หน้า ให้ยิง AJAX แทน
-                        wrapper.style.opacity = '0.5'; // ทำจางๆ ระหว่างโหลด
-                        
-                        fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=refresh_addon_deals')
-                            .then(response => response.text())
-                            .then(data => {
-                                wrapper.innerHTML = data;
-                                wrapper.style.opacity = '1';
-                                countdown = 180; // Reset เวลาใหม่
-                            });
-                        return;
+                    fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=refresh_addon_deals')
+                        .then(response => response.text())
+                        .then(data => {
+                            wrapper.innerHTML = data;
+                            wrapper.style.opacity = '1';
+                            countdown = 180; // Reset เวลาใหม่
+                        });
+                    return;
+                }
+                
+                let min = Math.floor(countdown / 60);
+                let sec = (countdown % 60).toString().padStart(2, '0');
+                countdownEl.innerHTML = min + ":" + sec;
+            }, 1000);
+
+            document.getElementById('load-more-btn').addEventListener('click', function() {
+                let btn = this;
+                let holder = document.querySelector('.addon-deal-holder');
+                
+                // 1. เก็บ ID สินค้าที่มีอยู่บนหน้าจอตอนนี้ทั้งหมด
+                let existingIds = [];
+                document.querySelectorAll('.addon-deal-item').forEach(item => {
+                    let id = item.getAttribute('data-id'); 
+                    if(id) existingIds.push(id);
+                });
+
+                btn.innerHTML = "กำลังค้นหา...";
+                btn.disabled = true;
+
+                // 2. ยิง AJAX ไปดึงของใหม่โดยส่ง ID เก่าไปกันซ้ำ
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=load_more_addon_deals&exclude=' + existingIds.join(','))
+                .then(res => res.text())
+                .then(data => {
+                    if (data === 'DONE') {
+                        btn.innerHTML = "ไม่มีดีลเพิ่มเติมแล้ว";
+                        btn.style.display = 'none'; // หรือซ่อนปุ่มไปเลย
+                    } else {
+                        // 3. เอา HTML ใหม่ที่ได้มา "เสียบต่อท้าย"
+                        holder.insertAdjacentHTML('beforeend', data);
+                        btn.innerHTML = "ดูดีลเพิ่มเติม";
+                        btn.disabled = false;
                     }
-                    
-                    let min = Math.floor(countdown / 60);
-                    let sec = (countdown % 60).toString().padStart(2, '0');
-                    countdownEl.innerHTML = min + ":" + sec;
-                }, 1000);
-            })();
+                });
+            });
         </script>
     </div>
 <?php
