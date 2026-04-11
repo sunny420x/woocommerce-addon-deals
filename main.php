@@ -26,12 +26,15 @@ function woocommerce_addon_deals_setting_page() {
     ?>
     <div class="wrap">
         <h1>ตั้งค่า Addon Deals</h1>
-        <p>Addon Deals เงื่อนไขการทำงาน คือ จะโชว์ดีลพิเศษจนกว่าจะหมดอายุ หากหมดอายุแล้วจะไม่แสดงดีลให้อีก จนกว่าจะดำเนินการสั่งซื้อออเดอร์ปัจจุบันเสร็จ จะพบว่าดีลพิเศษแสดงอีกครั้งเมื่อเลือกซื้อสินค้ารอบหน้า</p>
+        <p><strong>Addon Deals</strong> เงื่อนไขการทำงาน คือ จะโชว์ดีลพิเศษจนกว่าจะหมดอายุ หากหมดอายุแล้วจะไม่แสดงดีลให้อีก จนกว่าจะดำเนินการสั่งซื้อออเดอร์ปัจจุบันเสร็จ จะพบว่าดีลพิเศษแสดงอีกครั้งเมื่อเลือกซื้อสินค้ารอบหน้า</p>
+        <p>การเพิ่มสินค้าลงไปใน Addon Deals จะทำได้โดยการกำหนด Product Category เพิ่มจากเดิมโดยกำหนด slug เป็น 'addon-deals'</p>
         <hr>
         <form action="options.php" method="post">
             <?php
             settings_fields('addon_settings_group');
             ?>
+            <h2>Category Slug ID:</h2>
+            <input type="number" name="addon_deal_category_slug_id" value="<?php echo esc_attr(get_option('addon_deal_category_slug_id', 514)); ?>" />
             <h2>ลดราคาร้อยละ (%):</h2>
             <input type="number" name="addon_deal_percent_discount" value="<?php echo esc_attr(get_option('addon_deal_percent_discount', 10)); ?>" />
             <h2>จำนวนวินาทีนับถอยหลังก่อนหมดเวลา (Timeout):</h2>
@@ -39,7 +42,7 @@ function woocommerce_addon_deals_setting_page() {
             <h2>URL ภาพ Banner:</h2>
             <input type="text" name="addon_deal_banner_url" value="<?php echo esc_attr(get_option('addon_deal_banner_url', "https://www.worldpools.co.th/wp-content/uploads/2026/04/addon-deal-new.jpg")); ?>" />
             <br>
-            <?php submit_button('บันทึกเกณฑ์คะแนน'); ?>
+            <?php submit_button('บันทึกการเปลี่ยนแปลง'); ?>
             <hr>
             <p>Github Repository: <a href="https://github.com/sunny420x/woocommerce-addon-deals" target="_blank">github.com/sunny420x/woocommerce-addon-deals</a></p>
         </form>
@@ -54,6 +57,7 @@ function woocommerce_addon_deals_setting_init() {
     register_setting('addon_settings_group', 'addon_deal_percent_discount');
     register_setting('addon_settings_group', 'addon_deal_timeout');
     register_setting('addon_settings_group', 'addon_deal_banner_url');
+    register_setting('addon_settings_group', 'addon_deal_category_slug_id');
 }
 
 function get_worldchem_addon_deals_html() {
@@ -500,7 +504,7 @@ add_filter( 'woocommerce_product_categories_widget_args', 'exclude_widget_catego
 
 function exclude_widget_category_addon_deal( $args ) {
     // ใส่ ID ของหมวดหมู่ 'addon-deals'
-    $args['exclude'] = array( 514 ); //ซ่อน addon-deal
+    $args['exclude'] = array( get_option('addon_deal_category_slug_id', 514) ); //ซ่อน addon-deal
     
     return $args;
 }
