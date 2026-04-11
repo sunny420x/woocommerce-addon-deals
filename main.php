@@ -8,6 +8,54 @@
  * Plugin URI: https://github.com/sunny420x/woocommerce-addon-deals
  */
 
+add_action('admin_menu', 'worldchem_addon_deals_menu');
+
+function worldchem_addon_deals_menu() {
+    add_menu_page(
+        'Addon Deals Settings', // Title ของหน้า
+        'ระบบ Addon Deals', // ชื่อเมนูที่โชว์ในแถบข้าง
+        'manage_options', //สิทธิ์การเข้าถึง (Admin)
+        'woocommerce-addon-deals-settings', // Slug ของหน้า
+        'woocommerce_addon_deals_setting_page', // ฟังก์ชันที่ใช้พ่น HTML หน้า Setting
+        'dashicons-cart', // ไอคอน
+        '80' // ตำแหน่งเมนู
+    );
+}
+
+function woocommerce_addon_deals_setting_page() {
+    ?>
+    <div class="wrap">
+        <h1>ตั้งค่า Addon Deals</h1>
+        <p>Addon Deals เงื่อนไขการทำงาน คือ จะโชว์ดีลพิเศษจนกว่าจะหมดอายุ หากหมดอายุแล้วจะไม่แสดงดีลให้อีก จนกว่าจะดำเนินการสั่งซื้อออเดอร์ปัจจุบันเสร็จ จะพบว่าดีลพิเศษแสดงอีกครั้งเมื่อเลือกซื้อสินค้ารอบหน้า</p>
+        <hr>
+        <form action="options.php" method="post">
+            <?php
+            settings_fields('addon_settings_group');
+            ?>
+            <h2>ลดราคาร้อยละ (%):</h2>
+            <input type="number" name="addon_deal_percent_discount" value="<?php echo esc_attr(get_option('addon_deal_percent_discount', 10)); ?>" />
+            <h2>จำนวนวินาทีนับถอยหลังก่อนหมดเวลา (Timeout):</h2>
+            <input type="number" name="addon_deal_timeout" value="<?php echo esc_attr(get_option('addon_deal_timeout', 180)); ?>" />
+            <h2>URL ภาพ Banner:</h2>
+            <input type="text" name="addon_deal_banner_url" value="<?php echo esc_attr(get_option('addon_deal_banner_url', "https://www.worldpools.co.th/wp-content/uploads/2026/04/addon-deal-new.jpg")); ?>" />
+            <br>
+            <?php submit_button('บันทึกเกณฑ์คะแนน'); ?>
+            <hr>
+            <p>Github Repository: <a href="https://github.com/sunny420x/woocommerce-addon-deals" target="_blank">github.com/sunny420x/woocommerce-addon-deals</a></p>
+        </form>
+    </div>
+    <?php
+}
+
+
+add_action('admin_init', 'woocommerce_addon_deals_setting_init');
+
+function woocommerce_addon_deals_setting_init() {
+    register_setting('addon_settings_group', 'addon_deal_percent_discount');
+    register_setting('addon_settings_group', 'addon_deal_timeout');
+    register_setting('addon_settings_group', 'addon_deal_banner_url');
+}
+
 function get_worldchem_addon_deals_html() {
     global $wpdb;
     $category_slug = 'addon-deals';
@@ -68,7 +116,7 @@ function render_addon_item_cards($product_ids) {
         }
 
         // --- 2. Logic เช็คราคาและสินค้าในตะกร้า ---
-        $special_price = (float) $product->get_price() * 0.9;
+        $special_price = (float) $product->get_price() * (1 - get_option('addon_deal_percent_discount', 0.1) / 100);
         $in_cart = false;
         foreach (WC()->cart->get_cart() as $item) { 
             if ($item['product_id'] == $id) { $in_cart = true; break; } 
@@ -232,8 +280,8 @@ function wp_cart_coupon_lucky_deal() {
     
     <div class="addon-deal-container">
         <div class="addon-deal-heading">
-            <img src="https://www.worldpools.co.th/wp-content/uploads/2026/04/addon-deal-new.jpg">    
-            <div id="countdown">หมดอายุในอีก 3:00</div>
+            <img src="<?php echo get_option('addon_deal_banner_url', "https://www.worldpools.co.th/wp-content/uploads/2026/04/addon-deal-new.jpg");?>">    
+            <div id="countdown"></div>
         </div>
         
         <div class="addon-deal-holder" id="addon-deals-wrapper">
@@ -247,8 +295,10 @@ function wp_cart_coupon_lucky_deal() {
         </div>
 
         <script>
-            let countdown = 180;
+            let countdown = <?php echo get_option('addon_deal_timeout', 180); ?>;
             let wrapper = document.getElementById("addon-deals-wrapper");
+
+            document.getElementById("countdown").innerHTML = "หมดอายุในอีก " + Math.floor(countdown / 60) + ":" + (countdown % 60).toString().padStart(2, '0');
 
             const timer = setInterval(() => {
                 let countdownEl = document.getElementById("countdown"); //ต้องอยู่ตำแหน่งนี้ เพราะ ถ้ากด plus, minus จะถูกแทนที่จนหาไม่เจอ
@@ -256,17 +306,7 @@ function wp_cart_coupon_lucky_deal() {
                 countdown -= 1;
                 
                 if(countdown <= 0) {
-                    // แทนที่จะ Reload หน้า ให้ยิง AJAX แทน
-                    wrapper.style.opacity = '0.5'; // ทำจางๆ ระหว่างโหลด
-                    
-                    // fetch('<?php // echo admin_url('admin-ajax.php'); ?>?action=refresh_addon_deals')
-                    //     .then(response => response.text())
-                    //     .then(data => {
-                    //         wrapper.innerHTML = data;
-                    //         wrapper.style.opacity = '1';
-                    //         countdown = 180; // Reset เวลาใหม่
-                    //     });
-                    // return;
+                    wrapper.style.opacity = '0.5';
 
                     fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=set_addon_deal_expired')
                         .then(() => {
