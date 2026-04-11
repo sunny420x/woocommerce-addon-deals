@@ -81,9 +81,9 @@ function render_addon_item_cards($product_ids) {
         
         $html .= '<div style="margin-top: auto; padding: 15px;">';
         if ($in_cart) {
-            $html .= '<div style="background: #e7f3e8; color: #28a745; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.85em;">สินค้าอยู่ในตะกร้าแล้ว</div>';
+            $html .= '<div style="background: #6c757d; color: #fff; padding: 10px; border-radius: 6px; font-size: 0.85em;">สินค้าอยู่ในตะกร้าแล้ว</div>';
         } elseif ($product->is_type('variable')) {
-            $html .= '<a href="'.get_permalink($id).'" style="background: #6c757d; color: white; padding: 10px; text-decoration: none; border-radius: 6px; display: block; font-size: 0.9em; text-align: center;">เลือกขนาด/ตัวเลือก</a>';
+            $html .= '<a href="'.get_permalink($id).'" style="background: #e7f3e8; color: #28a745; padding: 10px; text-decoration: none; border-radius: 6px; display: block; font-size: 0.9em; text-align: center;">เลือกขนาด/ตัวเลือก</a>';
         } else {
             $html .= '<a href="?add-to-cart='.$id.'&apply_deal_coupon='.$coupon_code.'" style="background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 6px; display: block; text-align: center; font-size: 0.9em;">เพิ่มลงในตะกร้า</a>';
         }
@@ -150,8 +150,8 @@ function wp_cart_coupon_lucky_deal() {
             border-radius: 10px; 
             text-align: center; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                border: 1px solid #eee; 
-                height: max-content;
+            border: 1px solid #eee; 
+            height: max-content;
         }
 
         .addon-deal-container {
@@ -186,11 +186,25 @@ function wp_cart_coupon_lucky_deal() {
             padding: 2px 5px;
             font-size: 1rem;
             font-weight: normal;
+            margin: 0 0 0 5px;
+            border-radius: 5px;
         }
     </style>
+
+    <script>
+        // ล้าง URL parameter หลังจากกดเพิ่มสินค้าเสร็จ เพื่อกันการกด F5 แล้วแอดซ้ำ
+        if (window.history.replaceState) {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('add-to-cart') || url.searchParams.has('apply_deal_coupon')) {
+                url.searchParams.delete('add-to-cart');
+                url.searchParams.delete('apply_deal_coupon');
+                window.history.replaceState({}, document.title, url.pathname + url.search);
+            }
+        }
+    </script>
     
     <div class="addon-deal-container">
-        <h3 class="addon-deal-heading">🎁 ดีลพิเศษสำหรับคุณ <span id="countdown">3:00</span></h3>
+        <h3 class="addon-deal-heading">🎁 ดีลพิเศษสำหรับคุณ <span id="countdown">หมดอายุในอีก 3:00</span></h3>
         
         <div class="addon-deal-holder" id="addon-deals-wrapper">
             <?php echo get_worldchem_addon_deals_html(); ?>
@@ -204,10 +218,11 @@ function wp_cart_coupon_lucky_deal() {
 
         <script>
             let countdown = 180;
-            let countdownEl = document.getElementById("countdown");
             let wrapper = document.getElementById("addon-deals-wrapper");
 
             const timer = setInterval(() => {
+                let countdownEl = document.getElementById("countdown"); //ต้องอยู่ตำแหน่งนี้ เพราะ ถ้ากด plus, minus จะถูกแทนที่จนหาไม่เจอ
+                
                 countdown -= 1;
                 
                 if(countdown <= 0) {
@@ -226,7 +241,7 @@ function wp_cart_coupon_lucky_deal() {
                 
                 let min = Math.floor(countdown / 60);
                 let sec = (countdown % 60).toString().padStart(2, '0');
-                countdownEl.innerHTML = min + ":" + sec;
+                countdownEl.innerHTML = "หมดอายุในอีก " + min + ":" + sec;
             }, 1000);
 
             document.getElementById('load-more-btn').addEventListener('click', function() {
