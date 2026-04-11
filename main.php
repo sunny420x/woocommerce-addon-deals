@@ -279,3 +279,15 @@ function smart_auto_addon_deal_handler() {
         }
     }
 }
+
+/**
+ * ซ่อนหมวดหมู่สินค้า 'addon-deals' ออกจาก Widget Product Categories
+ */
+add_filter( 'woocommerce_product_categories_widget_args', 'exclude_widget_category_addon_deal' );
+
+function exclude_widget_category_addon_deal( $args ) {
+    // ใส่ ID ของหมวดหมู่ 'addon-deals'
+    $args['exclude'] = array( 514 ); //ซ่อน addon-deal
+    
+    return $args;
+}
