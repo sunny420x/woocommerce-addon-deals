@@ -75,7 +75,7 @@ function render_addon_item_cards($product_ids) {
         }
 
         $html .= '<div class="addon-deal-item" data-id="'.$id.'">';
-        $html .= '<a href="'.$product->get_permalink().'">'.$product->get_image('thumbnail', array('style' => 'border-radius:8px; margin-bottom:15px; width:100%; height:150px; object-fit:cover;')).'</a>';
+        $html .= '<a href="'.$product->get_permalink().'">'."<div class='addon-product-img-wrapper'>".$product->get_image('thumbnail', array('class' => 'addon-product-img')).'</div></a>';
         $html .= '<a href="'.$product->get_permalink().'"><h5 class="addon-deal-name">'.$product->get_name().'</h5></a>';
         $html .= '<span class="addon-deal-price"><span style="font-size: 1.2rem;">฿</span> '.$special_price.' <del style="color:#bbb; font-weight:normal; font-size:0.7em; margin-left:5px;">฿ '.$product->get_price().'</del> <span class="addon-deal-discount">-10%</span></span>';
         
@@ -127,6 +127,12 @@ add_action('wp_ajax_nopriv_load_more_addon_deals', 'ajax_load_more_addon_deals')
 add_action('woocommerce_after_cart_table', 'wp_cart_coupon_lucky_deal');
 function wp_cart_coupon_lucky_deal() {
     if (WC()->cart->is_empty()) return;
+
+    // 1. เช็คก่อนว่า User คนนี้ทำดีลหมดอายุไปหรือยัง
+    if (!session_id()) session_start();
+    if (isset($_SESSION['worldchem_addon_deal_is_expired']) && $_SESSION['worldchem_addon_deal_is_expired'] === true) {
+        return; // ⛔️ ถ้าหมดเวลาแล้ว ไม่ต้องโชว์อะไรเลย จบงาน!
+    }
     ?>
     <style>
         span.addon-deal-price {
@@ -155,22 +161,25 @@ function wp_cart_coupon_lucky_deal() {
         }
 
         .addon-deal-container {
-            padding: 20px; 
             margin-top: 30px; 
             border: 1px solid #e9e9e9; 
             border-radius: 10px; 
             background: #fafafa;
+            overflow: hidden;
         }
         .addon-deal-heading {
             color: #856404; 
             margin-top: 0; 
-            text-align: center; 
-            margin-bottom: 30px;
+            text-align: center;
+        }
+        .addon-deal-heading img {
+            width: 100%;
         }
         .addon-deal-holder {
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
             gap: 20px;
+            padding: 20px; 
         }
 
         .addon-deal-container #countdown {
@@ -178,6 +187,7 @@ function wp_cart_coupon_lucky_deal() {
             background: #FBE5F0;
             padding: 2px 5px;
             font-size: 1rem;
+            width: 100%;
         }
 
         .addon-deal-discount {
@@ -188,6 +198,23 @@ function wp_cart_coupon_lucky_deal() {
             font-weight: normal;
             margin: 0 0 0 5px;
             border-radius: 5px;
+        }
+
+        .addon-product-img-wrapper {
+            width: 100%;
+            height: auto;
+            overflow: hidden;
+        }
+
+        .addon-product-img {
+            border-radius:8px; 
+            margin-bottom:15px;
+            width:100%;
+            height:150px;
+            transition: .2s ease-in-out;
+        }
+        .addon-product-img:hover {
+            transform: scale(1.2);
         }
     </style>
 
@@ -204,13 +231,16 @@ function wp_cart_coupon_lucky_deal() {
     </script>
     
     <div class="addon-deal-container">
-        <h3 class="addon-deal-heading">🎁 ดีลพิเศษสำหรับคุณ <span id="countdown">หมดอายุในอีก 3:00</span></h3>
+        <div class="addon-deal-heading">
+            <img src="https://www.worldpools.co.th/wp-content/uploads/2026/04/addon-deal-new.jpg">    
+            <div id="countdown">หมดอายุในอีก 3:00</div>
+        </div>
         
         <div class="addon-deal-holder" id="addon-deals-wrapper">
             <?php echo get_worldchem_addon_deals_html(); ?>
         </div>
 
-        <div style="text-align: center; margin-top: 30px;">
+        <div style="text-align: center; margin: 20px 0;">
             <span id="load-more-btn" style="color: #333; border: none; padding: 10px 20px; cursor: pointer;">
                 ดูดีลเพิ่มเติม
             </span>
@@ -229,12 +259,25 @@ function wp_cart_coupon_lucky_deal() {
                     // แทนที่จะ Reload หน้า ให้ยิง AJAX แทน
                     wrapper.style.opacity = '0.5'; // ทำจางๆ ระหว่างโหลด
                     
-                    fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=refresh_addon_deals')
-                        .then(response => response.text())
-                        .then(data => {
-                            wrapper.innerHTML = data;
-                            wrapper.style.opacity = '1';
-                            countdown = 180; // Reset เวลาใหม่
+                    // fetch('<?php // echo admin_url('admin-ajax.php'); ?>?action=refresh_addon_deals')
+                    //     .then(response => response.text())
+                    //     .then(data => {
+                    //         wrapper.innerHTML = data;
+                    //         wrapper.style.opacity = '1';
+                    //         countdown = 180; // Reset เวลาใหม่
+                    //     });
+                    // return;
+
+                    fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=set_addon_deal_expired')
+                        .then(() => {
+                            // 2. ลบกล่องดีลออกจากหน้าจอแบบเนียนๆ
+                            let container = document.querySelector('.addon-deal-container');
+                            if(container) {
+                                container.style.transition = 'opacity 0.5s';
+                                container.style.opacity = '0';
+                                setTimeout(() => { container.remove(); }, 500);
+                            }
+                            clearInterval(timer); // หยุดเวลานับ
                         });
                     return;
                 }
@@ -276,6 +319,15 @@ function wp_cart_coupon_lucky_deal() {
         </script>
     </div>
 <?php
+}
+
+add_action('wp_ajax_set_addon_deal_expired', 'ajax_set_addon_deal_expired');
+add_action('wp_ajax_nopriv_set_addon_deal_expired', 'ajax_set_addon_deal_expired');
+
+function ajax_set_addon_deal_expired() {
+    if (!session_id()) session_start();
+    $_SESSION['worldchem_addon_deal_is_expired'] = true; // จดบันทึกว่า "หมดอายุแล้ว"
+    wp_die();
 }
 
 add_action('woocommerce_cart_totals_after_order_total', 'display_combined_addon_and_tiered_discount_v5');
@@ -322,7 +374,33 @@ function smart_auto_addon_deal_handler() {
     global $wpdb;
     if (WC()->cart->is_empty()) return;
 
+    if (!session_id()) session_start();
     $category_slug = 'addon-deals';
+
+    // 1. เช็คว่าดีลหมดอายุไปแล้วหรือยัง (จาก Session ที่เราตั้งไว้)
+    $is_expired = (isset($_SESSION['worldchem_addon_deal_is_expired']) && $_SESSION['worldchem_addon_deal_is_expired'] === true);
+
+    // 2. ดึงคูปองดีลทั้งหมดที่ใช้ (หรือค้าง) อยู่ตอนนี้
+    $applied_coupons = WC()->cart->get_applied_coupons();
+
+    // --- 🚨 กรณีที่ "ดีลหมดอายุ" หรือ "ไม่มีสินค้าหลัก" ---
+    // เราจะกวาดล้างคูปอง D20- ทิ้งทั้งหมด
+    $has_main_product = false;
+    foreach (WC()->cart->get_cart() as $cart_item) {
+        if (!has_term($category_slug, 'product_cat', $cart_item['product_id'])) {
+            $has_main_product = true;
+            break;
+        }
+    }
+
+    if ($is_expired || !$has_main_product) {
+        foreach ($applied_coupons as $code) {
+            if (stripos($code, 'D20-') === 0) {
+                WC()->cart->remove_coupon($code);
+            }
+        }
+        return; // จบการทำงาน ไม่ต้องไปเช็คยัดคูปองเพิ่มแล้ว
+    }
     
     // 1. ตรวจสอบว่าในตะกร้ามี "สินค้าหลัก" หรือไม่ (สินค้าที่ไม่ได้อยู่ในหมวด addon-deals)
     $has_main_product = false;
@@ -385,4 +463,23 @@ function exclude_widget_category_addon_deal( $args ) {
     $args['exclude'] = array( 514 ); //ซ่อน addon-deal
     
     return $args;
+}
+
+/**
+ * ล้างสถานะดีลหมดอายุ เมื่อสั่งซื้อสำเร็จ
+ * เพื่อให้ออเดอร์ถัดไปลูกค้าสามารถเห็นดีลได้อีกครั้ง
+ */
+add_action('woocommerce_thankyou', 'reset_worldchem_addon_deal_after_purchase', 10, 1);
+function reset_worldchem_addon_deal_after_purchase( $order_id ) {
+    if ( ! $order_id ) return;
+
+    // 1. เริ่ม Session (ถ้ายังไม่เริ่ม)
+    if ( ! session_id() ) {
+        session_start();
+    }
+
+    // 2. ล้าง Session ที่บอกว่าดีลหมดอายุ
+    if ( isset($_SESSION['worldchem_addon_deal_is_expired']) ) {
+        unset($_SESSION['worldchem_addon_deal_is_expired']);
+    }
 }
