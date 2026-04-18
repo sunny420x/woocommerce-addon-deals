@@ -24,7 +24,7 @@ function worldchem_addon_deals_menu() {
 
 function woocommerce_addon_deals_setting_page() {
     ?>
-    <div class="wrap">
+    <div class="wrap" style="background: #fff; padding: 20px; border-radius: 10px; margin-top: 20px;">
         <h1>ตั้งค่า Addon Deals</h1>
         <p><strong>Addon Deals</strong> เงื่อนไขการทำงาน คือ จะโชว์ดีลพิเศษจนกว่าจะหมดอายุ หากหมดอายุแล้วจะไม่แสดงดีลให้อีก จนกว่าจะดำเนินการสั่งซื้อออเดอร์ปัจจุบันเสร็จ จะพบว่าดีลพิเศษแสดงอีกครั้งเมื่อเลือกซื้อสินค้ารอบหน้า</p>
         <p>การเพิ่มสินค้าลงไปใน Addon Deals จะทำได้โดยการกำหนด Product Category เพิ่มจากเดิมโดยกำหนด slug เป็น 'addon-deals'</p>
