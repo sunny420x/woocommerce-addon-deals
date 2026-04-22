@@ -1,3 +1,5 @@
+<img width="952" height="556" alt="image" src="https://github.com/user-attachments/assets/e08fb0e9-017c-4653-a26b-c78f5e4770a5" />
+
 # Addon Deals สำหรับ Woocommerce
 
 สามารถเพิ่มสินค้าเข้าไปใน "ดีลพิเศษ" หรือ Addon Deals ได้ โดยการเพิ่ม slug 'addon-deals' ลงไปในสินค้าเป็นหมวดหมู่ย่อยเพิ่มเติมของสินค้าชิ้นนั้น
