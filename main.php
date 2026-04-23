@@ -95,7 +95,7 @@ function woocommerce_addon_deals_setting_page() {
 add_action('admin_enqueue_scripts', 'addon_deal_setting_load_media_picker');
 function addon_deal_setting_load_media_picker($hook) {
     // โหลดเฉพาะในหน้า Setting ของเรา (กันไปตีกับหน้าอื่น)
-    if ($hook !== 'woocommerce-addon-deals-settings') { // เปลี่ยนชื่อ slug ให้ตรงกับของพี่
+    if ($hook !== 'woocommerce-addon-deals-settings') { // เปลี่ยนชื่อ slug ให้ตรง
         return;
     }
     wp_enqueue_media();
@@ -151,7 +151,7 @@ function render_addon_item_cards($product_ids) {
         $product = wc_get_product($id);
         if (!$product) continue;
 
-        // --- 1. Logic คูปอง (ยกมาจากโค้ดเดิมของพี่) ---
+        // --- 1. Logic คูปอง ---
         $prefix = 'D20-' . $id . '-';
         $existing_coupon_code = $wpdb->get_var($wpdb->prepare("SELECT post_title FROM {$wpdb->prefix}posts p INNER JOIN {$wpdb->prefix}postmeta pm ON p.ID = pm.post_id WHERE p.post_type = 'shop_coupon' AND p.post_status = 'publish' AND p.post_title LIKE %s AND pm.meta_key = 'usage_count' AND CAST(pm.meta_value AS UNSIGNED) < 1 ORDER BY p.ID DESC LIMIT 1", $prefix . '%'));
         
