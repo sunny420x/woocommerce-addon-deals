@@ -179,7 +179,7 @@ function render_addon_item_cards($product_ids) {
         $html .= '<div class="addon-deal-item" data-id="'.$id.'">';
         $html .= '<a href="'.$product->get_permalink().'">'."<div class='addon-product-img-wrapper'>".$product->get_image('thumbnail', array('class' => 'addon-product-img')).'</div></a>';
         $html .= '<a href="'.$product->get_permalink().'"><h5 class="addon-deal-name">'.$product->get_name().'</h5></a>';
-        $html .= '<span class="addon-deal-price"><span style="font-size: 1.2rem;">฿</span> '.$special_price.' <del style="color:#bbb; font-weight:normal; font-size:0.7em; margin-left:5px;">฿ '.$product->get_price().'</del> <span class="addon-deal-discount">-10%</span></span>';
+        $html .= '<span class="addon-deal-price"><span style="font-size: 1.2rem;">฿</span> '.number_format($special_price, 0).' <del style="color:#bbb; font-weight:normal; font-size:0.7em; margin-left:5px;">฿ '.number_format($product->get_price(), 0).'</del> <span class="addon-deal-discount">-10%</span></span>';
         
         $html .= '<div style="margin-top: auto; padding: 15px;">';
         if ($in_cart) {
@@ -238,11 +238,12 @@ function wp_cart_coupon_lucky_deal() {
     ?>
     <style>
         span.addon-deal-price {
-            margin: 20px 10px 10px 10px; 
-            color: #dd140d; 
-            font-weight: bold; 
-            font-size: 1.3rem; 
-            padding: 20px;
+            color: #dd140d;
+            font-weight: bold;
+            font-size: 1.3rem;
+            padding: 10px;
+            width: 100%;
+            display: block;
         }
 
         .addon-deal-name {
@@ -422,43 +423,6 @@ function ajax_set_addon_deal_expired() {
     if (!session_id()) session_start();
     $_SESSION['worldchem_addon_deal_is_expired'] = true; // จดบันทึกว่า "หมดอายุแล้ว"
     wp_die();
-}
-
-add_action('woocommerce_cart_totals_after_order_total', 'display_combined_addon_and_tiered_discount_v5');
-add_action('woocommerce_review_order_after_order_total', 'display_combined_addon_and_tiered_discount_v5');
-
-function display_combined_addon_and_tiered_discount_v5() {
-    $total_discount = 0;
-
-    // --- 1. ดึงส่วนลดจากคูปอง Add-on (D20-) ---
-    $applied_coupons = WC()->cart->get_applied_coupons();
-    if (!empty($applied_coupons)) {
-        foreach ($applied_coupons as $code) {
-            if (stripos($code, 'D20-') === 0) {
-                $total_discount += WC()->cart->get_coupon_discount_amount($code);
-            }
-        }
-    }
-
-    // --- 2. ดึงส่วนลดจาก Tiered Brand Discount (ที่ส่งมาเป็น Fee) ---
-    // ปกติ Fee ที่ลดราคามันจะเป็นค่าติดลบ เราเลยต้องเอามาบวกแบบค่าสัมบูรณ์ (abs)
-    foreach (WC()->cart->get_fees() as $fee) {
-        if ($fee->amount < 0) {
-            $total_discount += abs($fee->amount);
-        }
-    }
-
-    // --- 3. แสดงผลรวมทั้งหมดที่ประหยัดไปได้ ---
-    if ($total_discount > 0) {
-        ?>
-        <div class="totals-discounts">
-            <div class="title">
-                <span>ประหยัดไปได้ทั้งหมด:</span> 
-                <span class="totals" style="color: red;"><?php echo wc_price($total_discount); ?></span>
-            </div>
-        </div>
-        <?php
-    }
 }
 
 add_action('woocommerce_before_cart', 'smart_auto_addon_deal_handler');
