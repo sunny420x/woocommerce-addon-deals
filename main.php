@@ -174,12 +174,84 @@ function woocommerce_addon_deals_setting_page() {
                         <input type="number" name="addon_deal_first_product_discount_percent" value="<?php echo esc_attr(get_option('addon_deal_first_product_discount_percent', 40)); ?>" />
                         <h2>ลดราคาสินค้าต่อไปที่เลือกซื้อ (%):</h2>
                         <input type="number" name="addon_deal_next_product_discount_percent" value="<?php echo esc_attr(get_option('addon_deal_next_product_discount_percent', 50)); ?>" />
-                        <h2> IDs ของสินค้าที่ต้องการให้ลดราคา (คั่นด้วย ,):</h2>
+                        <h2> IDs ของสินค้าที่เข้าร่วม:</h2>
                         <input type="text" name="addon_deal_product_ids" value="<?php echo esc_attr(get_option('addon_deal_product_ids', '')); ?>" style="width: 100%;"/>
                         <br>
+                        <div style="height: 400px; overflow: auto;">
+                            <?php
+                            $args = array(
+                                'status'  => 'publish',
+                                'limit'   => -1, // -1 pulls all items
+                                'orderby' => 'name',
+                                'order'   => 'ASC',
+                            );
+
+                            $all_products = wc_get_products($args);
+
+                            $addon_deal_product_ids = explode(",", get_option('addon_deal_product_ids', ''));
+
+                            foreach ($all_products as $product) {
+                                ?>
+                                
+                                <?php
+                                if ($product->get_type() == 'variable') {
+                                    $variations = $product->get_available_variations();
+                                    
+                                    foreach ($variations as $variation) {
+                                        $variation_id = $variation['variation_id'];
+                                        $is_checked = false;
+    
+                                        if (!empty($addon_deal_product_ids) && in_array($variation_id, $addon_deal_product_ids)) {
+                                            $is_checked = true;
+                                        }
+            
+                                        $attribute_labels = [];
+                                        foreach ($variation['attributes'] as $key => $value) {
+                                            $attr_name = str_replace('attribute_', '', $key);
+                                            $attr_name = wc_attribute_label($attr_name); 
+                                            $attribute_labels[] = $attr_name . ': ' . ucfirst($value);
+                                        }
+                                        $attributes_text = implode(', ', $attribute_labels);
+                                        ?>
+                                        <p>
+                                            <input 
+                                                type="checkbox" 
+                                                name="addon_products[<?php echo esc_attr($variation_id); ?>]" 
+                                                value="<?php echo esc_attr($variation_id); ?>" 
+                                                <?php checked($is_checked, true); ?> 
+                                                onchange="initProduct();"
+                                            />
+                                            <?php echo esc_html($product->get_title()) . ' (' . esc_html(urldecode($attributes_text)) . ')'; ?>
+                                        </p>
+                                        <?php
+                                    }
+                                } else {
+                                    $is_checked = false;
+                                    if (!empty($addon_deal_product_ids) && in_array($product->get_id(), $addon_deal_product_ids)) {
+                                        $is_checked = true;
+                                    }
+                                ?>
+                                    <p><input type="checkbox" name="addon_products[<?=$product->get_id()?>]" value="<?=$product->get_id()?>" <?php if($is_checked) { echo "checked"; } ?> onchange="initProduct();" /><?php echo esc_html($product->get_title()); ?></p>
+                                <?php
+                                }
+                                ?>
+                            <?php
+                            }
+                            ?>
+                        </div>
                         <?php submit_button('บันทึกการเปลี่ยนแปลง'); ?>
                     </form>
                 </div>
+                <script>
+                    function initProduct() {
+                        const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                        let items = []
+                        checkedBoxes.forEach(item => {
+                            items.push(item.value)
+                        })
+                        document.getElementsByName('addon_deal_product_ids')[0].value = items.join(",");
+                    }
+                </script>
                 <?php
                 } else {
                 ?>
