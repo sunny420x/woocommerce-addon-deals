@@ -320,6 +320,16 @@ function apply_addon_deal_product_id_discounts($cart) {
     $first_discount = (float) get_option('addon_deal_first_product_discount_percent', 40);
     $next_discount = (float) get_option('addon_deal_next_product_discount_percent', 50);
     $matched_count = 0;
+    $discount_total = 0;
+    $fee_label = 'Flash Sale';
+
+    if (property_exists($cart, 'fees') && is_array($cart->fees)) {
+        foreach ($cart->fees as $fee_key => $fee) {
+            if (is_object($fee) && isset($fee->name) && $fee->name === $fee_label) {
+                unset($cart->fees[$fee_key]);
+            }
+        }
+    }
 
     foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
         $product_id = !empty($cart_item['product_id']) ? (int) $cart_item['product_id'] : 0;
@@ -344,22 +354,25 @@ function apply_addon_deal_product_id_discounts($cart) {
         }
 
         $discounted_price = round($base_price * (1 - ($discount_percent / 100)), 2);
-        $product->set_price($discounted_price);
-        $product->set_sale_price($discounted_price);
+        $discount_amount = round(($base_price - $discounted_price) * $cart_item['quantity'], 2);
+        $discount_total += $discount_amount;
 
         if (isset($cart->cart_contents[$cart_item_key])) {
             $cart->cart_contents[$cart_item_key]['data'] = $product;
-            $cart->cart_contents[$cart_item_key]['line_subtotal'] = $discounted_price * $cart_item['quantity'];
-            $cart->cart_contents[$cart_item_key]['line_total'] = $discounted_price * $cart_item['quantity'];
             $cart->cart_contents[$cart_item_key]['addon_deal_discount_percent'] = (float) $discount_percent;
             $cart->cart_contents[$cart_item_key]['addon_deal_original_price'] = (float) $base_price;
             $cart->cart_contents[$cart_item_key]['addon_deal_effective_price'] = (float) $discounted_price;
         }
     }
+
+    if ($discount_total > 0) {
+        $cart->add_fee($fee_label, -$discount_total, false);
+    }
 }
 
-add_action('woocommerce_before_calculate_totals', 'apply_addon_deal_product_id_discounts', 10, 1);
+add_action('woocommerce_cart_calculate_fees', 'apply_addon_deal_product_id_discounts', 10, 1);
 add_filter('woocommerce_cart_item_price', 'addon_deal_cart_item_price', 10, 3);
+add_filter('woocommerce_cart_item_subtotal', 'addon_deal_cart_item_subtotal', 10, 3);
 
 function addon_deal_cart_item_price($price, $cart_item, $cart_item_key) {
     if (empty($cart_item['data']) || !is_object($cart_item['data'])) {
@@ -395,6 +408,32 @@ function addon_deal_cart_item_price($price, $cart_item, $cart_item_key) {
     }
 
     return $price;
+}
+
+function addon_deal_cart_item_subtotal($subtotal, $cart_item, $cart_item_key) {
+    if (empty($cart_item['data']) || !is_object($cart_item['data'])) {
+        return $subtotal;
+    }
+
+    $target_ids = get_addon_deal_target_product_ids();
+    if (empty($target_ids)) {
+        return $subtotal;
+    }
+
+    $product_id = !empty($cart_item['product_id']) ? (int) $cart_item['product_id'] : 0;
+    $variation_id = !empty($cart_item['variation_id']) ? (int) $cart_item['variation_id'] : 0;
+    $is_target_item = in_array($product_id, $target_ids, true) || ($variation_id && in_array($variation_id, $target_ids, true));
+
+    if (!$is_target_item) {
+        return $subtotal;
+    }
+
+    $effective_price = !empty($cart_item['addon_deal_effective_price']) ? (float) $cart_item['addon_deal_effective_price'] : (float) $cart_item['data']->get_price();
+    if ($effective_price > 0) {
+        return wc_price($effective_price * (int) $cart_item['quantity']);
+    }
+
+    return $subtotal;
 }
 
 function get_worldchem_addon_deals_html() {
