@@ -107,7 +107,34 @@ function woocommerce_addon_deals_setting_page() {
                         settings_fields('addon_settings_group');
                         ?>
                         <h2>Category Slug ID:</h2>
-                        <input type="number" name="addon_deal_category_slug_id" value="<?php echo esc_attr(get_option('addon_deal_category_slug_id', 514)); ?>" />
+                        <input type="number" name="addon_deal_category_slug_id" value="<?php echo esc_attr(get_option('addon_deal_category_slug_id')); ?>" />
+                        <div style="height: 200px; overflow: auto;">
+                            <?php
+                            $args = array(
+                                'taxonomy'   => 'product_cat',
+                                'orderby'    => 'name',
+                                'order'      => 'ASC',
+                                'hide_empty' => false, // Set to true to hide categories with 0 products
+                            );
+
+                            $product_categories = get_terms($args);
+
+                            if (!empty($product_categories) && !is_wp_error($product_categories)) {
+                                foreach ($product_categories as $category) {
+                                    $category_link = get_term_link($category);
+                                ?>
+                                <p>
+                                    <input type="radio" value="<?=$category->term_id ?>" name="addon_deal_category_slugs" onchange="initCategorySlug()" 
+                                    <?php if(get_option('addon_deal_category_slug_id') == $category->term_id) { echo "checked"; }?>>
+                                    <a href="<?=esc_url($category_link)?>" target="_blank"><?=esc_html($category->name)?></a> (<?=esc_html($category->count)?>)
+                                </p>
+                                <?php
+                                };
+                            } else {
+                                echo 'No product categories found.';
+                            }
+                            ?>
+                        </div>
                         <h2>ลดราคาร้อยละ (%):</h2>
                         <input type="number" name="addon_deal_percent_discount" value="<?php echo esc_attr(get_option('addon_deal_percent_discount', 10)); ?>" />
                         <h2>จำนวนวินาทีนับถอยหลังก่อนหมดเวลา (Timeout):</h2>
@@ -132,6 +159,11 @@ function woocommerce_addon_deals_setting_page() {
                         <hr>
                         <p>Github Repository: <a href="https://github.com/sunny420x/woocommerce-addon-deals" target="_blank">github.com/sunny420x/woocommerce-addon-deals</a></p>
                     </form>
+                    <script>
+                        function initCategorySlug() {
+                            document.getElementsByName("addon_deal_category_slug_id")[0].value = document.querySelector('input[name="addon_deal_category_slugs"]:checked').value;
+                        }
+                    </script>
                 </div>
                 <script type="text/javascript">
                 jQuery(document).ready(function($){
