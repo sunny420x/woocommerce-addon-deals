@@ -24,70 +24,174 @@ function worldchem_addon_deals_menu() {
 
 function woocommerce_addon_deals_setting_page() {
     ?>
-    <div class="wrap" style="background: #fff; padding: 20px; border-radius: 10px; margin-top: 20px;">
-        <h1>ตั้งค่า Addon Deals</h1>
-        <p><strong>Addon Deals</strong> เงื่อนไขการทำงาน คือ จะโชว์ดีลพิเศษจนกว่าจะหมดอายุ หากหมดอายุแล้วจะไม่แสดงดีลให้อีก จนกว่าจะดำเนินการสั่งซื้อออเดอร์ปัจจุบันเสร็จ จะพบว่าดีลพิเศษแสดงอีกครั้งเมื่อเลือกซื้อสินค้ารอบหน้า</p>
-        <p>การเพิ่มสินค้าลงไปใน Addon Deals จะทำได้โดยการกำหนด Product Category เพิ่มจากเดิมโดยกำหนด slug เป็น 'addon-deals'</p>
-        <hr>
-        <form action="options.php" method="post">
-            <?php
-            settings_fields('addon_settings_group');
-            ?>
-            <h2>Category Slug ID:</h2>
-            <input type="number" name="addon_deal_category_slug_id" value="<?php echo esc_attr(get_option('addon_deal_category_slug_id', 514)); ?>" />
-            <h2>ลดราคาร้อยละ (%):</h2>
-            <input type="number" name="addon_deal_percent_discount" value="<?php echo esc_attr(get_option('addon_deal_percent_discount', 10)); ?>" />
-            <h2>จำนวนวินาทีนับถอยหลังก่อนหมดเวลา (Timeout):</h2>
-            <input type="number" name="addon_deal_timeout" value="<?php echo esc_attr(get_option('addon_deal_timeout', 180)); ?>" />
-            <h2>ภาพ Banner ดีลพิเศษ:</h2>
-            <div class="banner-upload-wrapper">
-                <input type="text" name="addon_deal_banner_url" id="addon_deal_banner_url" 
-                    value="<?php echo esc_attr(get_option('addon_deal_banner_url', '')); ?>" 
-                    style="width: 70%;" />
-                
-                <button type="button" class="button" id="upload_banner_button">เลือกรูปภาพ...</button>
-                
-                <div id="banner_preview" style="margin-top: 10px;">
-                    <?php $banner_url = get_option('addon_deal_banner_url'); ?>
-                    <?php if ($banner_url) : ?>
-                        <img src="<?php echo esc_url($banner_url); ?>" style="max-width: 300px; border: 1px solid #ccc;" />
-                    <?php endif; ?>
-                </div>
+        <style>
+        .leftside {
+            width: 350px;
+            background: #f8f8f8;
+            height: max-content;
+        }
+        .leftside h1 {
+            background: #009FE3;
+            color: #fff;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0;
+        }
+        .leftside a {
+            padding: 10px 20px;
+            font-size: 14px;
+            background: #f8f8f8;
+            color: #000;
+            transition: .2s ease-in-out;
+            display: block;
+            width: 100%;
+            text-decoration: none;
+        }
+        .leftside a:hover {
+            background: #fff;
+            cursor: pointer;
+        }
+        .container {
+            width: 1200px;
+            background: #fff; 
+        }
+        .container h1 {
+            background: #555;
+            color: #fff;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0;
+        }
+        .container p {
+            padding: 0;
+        }
+        .white-label-zone {
+            width: calc(100% + 20px);
+            height: auto;
+            background: #fff;
+            display: flex;
+            margin: 0 0 0 -20px;
+        }
+        .white-label-zone h1,p {
+            padding: 0 20px;
+        }
+    </style>
+    <div class="white-label-zone no-print">
+        <span style="padding: 60px 10px 60px 40px;float: left;font-size: 60px;">🛒</span>
+        <div style="padding: 20px 0;">
+            <h1>WooCommerce Addon Deals</h1>
+            <p>ระบบสิทธิพิเศษ Addon Deals สำหรับ WooCommerce บน WordPress ประกอบไปด้วย คะแนนและระดับของสมาชิก แลกคะแนนเป็นส่วนลด ส่วนลดสำหรับสินค้าพิเศษ ส่วนลดสำหรับ Brand พิเศษ เป็นต้น
+                <br>
+                <strong>Github Repository:</strong> <a href="https://github.com/sunny420x/woocommerce-addon-deals" target="_blank">https://github.com/sunny420x/woocommerce-addon-deals</a>
+            </p>
+        </div>
+    </div>
+    <div class="wrap">
+        <div style="display: flex;">
+            <div class="leftside">
+                <h1>WooCommerce Addon Deals</h1>
+                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings&option=addon_by_slug">📦 Deals แบบกลุ่ม</a>
+                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings&option=addon_by_id">🎁 Deals แบบรายชิ้น</a>
+                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings">📜 คู่มือการใช้งาน</a>
             </div>
-            <br>
-            <?php submit_button('บันทึกการเปลี่ยนแปลง'); ?>
-            <hr>
-            <p>Github Repository: <a href="https://github.com/sunny420x/woocommerce-addon-deals" target="_blank">github.com/sunny420x/woocommerce-addon-deals</a></p>
-        </form>
+            <div class="container">
+                <?php
+                if(isset($_GET['option']) && $_GET['option'] === 'addon_by_slug') {
+                ?>
+                <h1>Addon Deals แบบกลุ่ม</h1>
+                <div style="padding: 0 25px 25px 25px;">
+                    <p><strong>Addon Deals</strong> เงื่อนไขการทำงาน คือ จะโชว์ดีลพิเศษจนกว่าจะหมดอายุ หากหมดอายุแล้วจะไม่แสดงดีลให้อีก จนกว่าจะดำเนินการสั่งซื้อออเดอร์ปัจจุบันเสร็จ จะพบว่าดีลพิเศษแสดงอีกครั้งเมื่อเลือกซื้อสินค้ารอบหน้า</p>
+                    <p>การเพิ่มสินค้าลงไปใน Addon Deals จะทำได้โดยการกำหนด Product Category เพิ่มจากเดิมโดยกำหนด slug เป็น 'addon-deals'</p>
+                    <form action="options.php" method="post">
+                        <?php
+                        settings_fields('addon_settings_group');
+                        ?>
+                        <h2>Category Slug ID:</h2>
+                        <input type="number" name="addon_deal_category_slug_id" value="<?php echo esc_attr(get_option('addon_deal_category_slug_id', 514)); ?>" />
+                        <h2>ลดราคาร้อยละ (%):</h2>
+                        <input type="number" name="addon_deal_percent_discount" value="<?php echo esc_attr(get_option('addon_deal_percent_discount', 10)); ?>" />
+                        <h2>จำนวนวินาทีนับถอยหลังก่อนหมดเวลา (Timeout):</h2>
+                        <input type="number" name="addon_deal_timeout" value="<?php echo esc_attr(get_option('addon_deal_timeout', 180)); ?>" />
+                        <h2>ภาพ Banner ดีลพิเศษ:</h2>
+                        <div class="banner-upload-wrapper">
+                            <input type="text" name="addon_deal_banner_url" id="addon_deal_banner_url" 
+                                value="<?php echo esc_attr(get_option('addon_deal_banner_url', '')); ?>" 
+                                style="width: 70%;" />
+                            
+                            <button type="button" class="button" id="upload_banner_button">เลือกรูปภาพ...</button>
+                            
+                            <div id="banner_preview" style="margin-top: 10px;">
+                                <?php $banner_url = get_option('addon_deal_banner_url'); ?>
+                                <?php if ($banner_url) : ?>
+                                    <img src="<?php echo esc_url($banner_url); ?>" style="max-width: 300px; border: 1px solid #ccc;" />
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <br>
+                        <?php submit_button('บันทึกการเปลี่ยนแปลง'); ?>
+                        <hr>
+                        <p>Github Repository: <a href="https://github.com/sunny420x/woocommerce-addon-deals" target="_blank">github.com/sunny420x/woocommerce-addon-deals</a></p>
+                    </form>
+                </div>
+                <script type="text/javascript">
+                jQuery(document).ready(function($){
+                    $('#upload_banner_button').click(function(e) {
+                        e.preventDefault();
+                        
+                        // สร้าง Media Frame
+                        var image_frame = wp.media({
+                            title: 'เลือกรูปภาพ Banner',
+                            multiple: false,
+                            library: { type: 'image' }
+                        });
 
-        <script type="text/javascript">
-        jQuery(document).ready(function($){
-            $('#upload_banner_button').click(function(e) {
-                e.preventDefault();
-                
-                // สร้าง Media Frame
-                var image_frame = wp.media({
-                    title: 'เลือกรูปภาพ Banner',
-                    multiple: false,
-                    library: { type: 'image' }
+                        // เมื่อเลือกรูปภาพเสร็จแล้ว
+                        image_frame.on('select', function() {
+                            var selection = image_frame.state().get('selection').first().toJSON();
+                            var image_url = selection.url;
+
+                            // 1. เอา URL ไปใส่ใน Input
+                            $('#addon_deal_banner_url').val(image_url);
+                            
+                            // 2. แสดงตัวอย่างรูปภาพ (Preview)
+                            $('#banner_preview').html('<img src="'+image_url+'" style="max-width: 300px; border: 1px solid #ccc;" />');
+                        });
+
+                        image_frame.open();
+                    });
                 });
+                </script>
+                <?php
+                } else if(isset($_GET['option']) && $_GET['option'] === 'addon_by_id') {
+                ?>
+                <h1>Addon Deals แบบรายชิ้น</h1>
+                <div style="padding: 0 25px 25px 25px;">
+                    <form action="options.php" method="post">
+                        <?php
+                        settings_fields('addon_by_id_settings_group');
+                        ?>
+                        <h2>ลดราคาสินค้าแรกที่เลือกซื้อ (%):</h2>
+                        <input type="number" name="addon_deal_first_product_discount_percent" value="<?php echo esc_attr(get_option('addon_deal_first_product_discount_percent', 40)); ?>" />
+                        <h2>ลดราคาสินค้าต่อไปที่เลือกซื้อ (%):</h2>
+                        <input type="number" name="addon_deal_next_product_discount_percent" value="<?php echo esc_attr(get_option('addon_deal_next_product_discount_percent', 50)); ?>" />
+                        <h2> IDs ของสินค้าที่ต้องการให้ลดราคา (คั่นด้วย ,):</h2>
+                        <input type="text" name="addon_deal_product_ids" value="<?php echo esc_attr(get_option('addon_deal_product_ids', '')); ?>" style="width: 100%;"/>
+                        <br>
+                        <?php submit_button('บันทึกการเปลี่ยนแปลง'); ?>
+                    </form>
+                </div>
+                <?php
+                } else {
+                ?>
+                <h1>Addon Deals</h1>
+                <div style="padding: 0 25px 25px 25px;">
 
-                // เมื่อเลือกรูปภาพเสร็จแล้ว
-                image_frame.on('select', function() {
-                    var selection = image_frame.state().get('selection').first().toJSON();
-                    var image_url = selection.url;
-
-                    // 1. เอา URL ไปใส่ใน Input
-                    $('#addon_deal_banner_url').val(image_url);
-                    
-                    // 2. แสดงตัวอย่างรูปภาพ (Preview)
-                    $('#banner_preview').html('<img src="'+image_url+'" style="max-width: 300px; border: 1px solid #ccc;" />');
-                });
-
-                image_frame.open();
-            });
-        });
-        </script>
+                </div>
+                <?php
+                }
+                ?>
+            </div>
+        </div>
     </div>
     <?php
 }
@@ -108,6 +212,189 @@ function woocommerce_addon_deals_setting_init() {
     register_setting('addon_settings_group', 'addon_deal_timeout');
     register_setting('addon_settings_group', 'addon_deal_banner_url');
     register_setting('addon_settings_group', 'addon_deal_category_slug_id');
+
+    register_setting('addon_by_id_settings_group', 'addon_deal_first_product_discount_percent');
+    register_setting('addon_by_id_settings_group', 'addon_deal_next_product_discount_percent');
+    register_setting('addon_by_id_settings_group', 'addon_deal_product_ids');
+}
+
+add_shortcode('addon_deal_product_ids_page', 'render_addon_deal_product_ids_page');
+
+function render_addon_deal_product_ids_page() {
+    $product_ids = get_addon_deal_target_product_ids();
+    if (empty($product_ids)) {
+        return '<p>ยังไม่มีสินค้าในรายการ addon_deal_product_ids</p>';
+    }
+
+    $products = array();
+    foreach ($product_ids as $product_id) {
+        $product = wc_get_product($product_id);
+        if (!$product || !is_object($product)) {
+            continue;
+        }
+
+        $products[] = $product;
+
+        if ($product->is_type('variable')) {
+            $children = $product->get_children();
+            foreach ($children as $child_id) {
+                $child_product = wc_get_product($child_id);
+                if ($child_product && is_object($child_product)) {
+                    $products[] = $child_product;
+                }
+            }
+        }
+    }
+
+    if (empty($products)) {
+        return '<p>ไม่พบสินค้าในรายการ addon_deal_product_ids</p>';
+    }
+
+    $products = array_values(array_unique(array_map(function ($product) {
+        return $product->get_id();
+    }, $products)));
+
+    ob_start();
+    echo '<div class="addon-deal-category-products" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:20px;">';
+
+    foreach ($products as $product_id) {
+        $product = wc_get_product($product_id);
+        if (!$product || !is_object($product)) {
+            continue;
+        }
+
+        $product_url = $product->get_permalink();
+        $image_html = $product->get_image('woocommerce_thumbnail');
+        $price_html = $product->is_on_sale() ? wc_format_sale_price($product->get_regular_price(), $product->get_sale_price()) : wc_price($product->get_price());
+    ?>
+        <div class="addon-deal-category-product" style="border:1px solid #e5e5e5; border-radius:10px; padding:15px; background:#fff;">
+            <a href="<?=esc_url($product_url)?>" style="display:block; text-decoration:none; color:inherit;">
+            <div style="margin-bottom:12px;"><?=$image_html ?></div>
+            <h3 style="margin:0 0 8px; font-size:16px;"><?=esc_html($product->get_name())?></h3>
+            <div style="font-weight:600; color:#d00;"><?=$price_html ?></div>
+            </a>
+        </div>
+    <?php
+    }
+
+    echo '</div>';
+    return ob_get_clean();
+}
+
+function get_addon_deal_target_product_ids() {
+    $raw_ids = get_option('addon_deal_product_ids', '');
+    if (empty($raw_ids)) {
+        return array();
+    }
+
+    $ids = array();
+    foreach (explode(',', $raw_ids) as $raw_id) {
+        $clean_id = trim($raw_id);
+        if ($clean_id === '') {
+            continue;
+        }
+
+        $id = absint($clean_id);
+        if ($id) {
+            $ids[] = $id;
+        }
+    }
+
+    return array_values(array_unique($ids));
+}
+
+function apply_addon_deal_product_id_discounts($cart) {
+    if (is_admin() && !defined('DOING_AJAX')) {
+        return;
+    }
+
+    if (empty($cart) || !method_exists($cart, 'get_cart')) {
+        return;
+    }
+
+    $target_ids = get_addon_deal_target_product_ids();
+    if (empty($target_ids)) {
+        return;
+    }
+
+    $first_discount = (float) get_option('addon_deal_first_product_discount_percent', 40);
+    $next_discount = (float) get_option('addon_deal_next_product_discount_percent', 50);
+    $matched_count = 0;
+
+    foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
+        $product_id = !empty($cart_item['product_id']) ? (int) $cart_item['product_id'] : 0;
+        $variation_id = !empty($cart_item['variation_id']) ? (int) $cart_item['variation_id'] : 0;
+
+        $is_target_item = in_array($product_id, $target_ids, true) || ($variation_id && in_array($variation_id, $target_ids, true));
+        if (!$is_target_item) {
+            continue;
+        }
+
+        $discount_percent = $matched_count === 0 ? $first_discount : $next_discount;
+        $matched_count++;
+
+        $product = isset($cart_item['data']) ? $cart_item['data'] : null;
+        if (!$product || !is_object($product)) {
+            continue;
+        }
+
+        $base_price = (float) $product->get_price();
+        if ($base_price <= 0) {
+            continue;
+        }
+
+        $discounted_price = round($base_price * (1 - ($discount_percent / 100)), 2);
+        $product->set_price($discounted_price);
+        $product->set_sale_price($discounted_price);
+
+        if (isset($cart->cart_contents[$cart_item_key])) {
+            $cart->cart_contents[$cart_item_key]['data'] = $product;
+            $cart->cart_contents[$cart_item_key]['line_subtotal'] = $discounted_price * $cart_item['quantity'];
+            $cart->cart_contents[$cart_item_key]['line_total'] = $discounted_price * $cart_item['quantity'];
+            $cart->cart_contents[$cart_item_key]['addon_deal_discount_percent'] = (float) $discount_percent;
+            $cart->cart_contents[$cart_item_key]['addon_deal_original_price'] = (float) $base_price;
+            $cart->cart_contents[$cart_item_key]['addon_deal_effective_price'] = (float) $discounted_price;
+        }
+    }
+}
+
+add_action('woocommerce_before_calculate_totals', 'apply_addon_deal_product_id_discounts', 10, 1);
+add_filter('woocommerce_cart_item_price', 'addon_deal_cart_item_price', 10, 3);
+
+function addon_deal_cart_item_price($price, $cart_item, $cart_item_key) {
+    if (empty($cart_item['data']) || !is_object($cart_item['data'])) {
+        return $price;
+    }
+
+    $target_ids = get_addon_deal_target_product_ids();
+    if (empty($target_ids)) {
+        return $price;
+    }
+
+    $product_id = !empty($cart_item['product_id']) ? (int) $cart_item['product_id'] : 0;
+    $variation_id = !empty($cart_item['variation_id']) ? (int) $cart_item['variation_id'] : 0;
+    $is_target_item = in_array($product_id, $target_ids, true) || ($variation_id && in_array($variation_id, $target_ids, true));
+
+    if (!$is_target_item) {
+        return $price;
+    }
+
+    $original_price = !empty($cart_item['addon_deal_original_price']) ? (float) $cart_item['addon_deal_original_price'] : (float) $cart_item['data']->get_regular_price();
+    if ($original_price <= 0) {
+        $original_price = (float) $cart_item['data']->get_price();
+    }
+
+    $effective_price = !empty($cart_item['addon_deal_effective_price']) ? (float) $cart_item['addon_deal_effective_price'] : (float) $cart_item['data']->get_price();
+    if ($effective_price > 0 && $original_price > 0) {
+        $discount_percent = !empty($cart_item['addon_deal_discount_percent']) ? (float) $cart_item['addon_deal_discount_percent'] : round((1 - ($effective_price / $original_price)) * 100, 0);
+        return '<span style="text-decoration: line-through; color: #999; margin-right: 6px;">' . wc_price($original_price) . '</span><span style="font-weight: 600; color: #d00;">' . wc_price($effective_price) . '</span><span style="display:block; font-size: 0.8em; color: #d00;">ลด ' . (int) $discount_percent . '%</span>';
+    }
+
+    if ($effective_price > 0) {
+        return wc_price($effective_price);
+    }
+
+    return $price;
 }
 
 function get_worldchem_addon_deals_html() {
