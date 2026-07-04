@@ -321,7 +321,7 @@ function apply_addon_deal_product_id_discounts($cart) {
     $next_discount = (float) get_option('addon_deal_next_product_discount_percent', 50);
     $matched_count = 0;
     $discount_total = 0;
-    $fee_label = 'Flash Sale';
+    $fee_label = 'ส่วนลดพิเศษ: Flash Sale';
 
     if (property_exists($cart, 'fees') && is_array($cart->fees)) {
         foreach ($cart->fees as $fee_key => $fee) {
