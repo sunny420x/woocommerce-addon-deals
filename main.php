@@ -378,17 +378,50 @@ function render_addon_deal_product_ids_page() {
         $image_html = $product->get_image('woocommerce_thumbnail');
         $price_html = $product->is_on_sale() ? wc_format_sale_price($product->get_regular_price(), $product->get_sale_price()) : wc_price($product->get_price());
     ?>
-        <div class="addon-deal-category-product" style="border:1px solid #e5e5e5; border-radius:10px; padding:15px; background:#fff;">
+        <div class="addon-deal-category-product" style="border:1px solid #e5e5e5; border-radius:10px; overflow: hidden; background:#fff;">
             <a href="<?=esc_url($product_url)?>" style="display:block; text-decoration:none; color:inherit;">
             <div style="margin-bottom:12px;"><?=$image_html ?></div>
-            <h3 style="margin:0 0 8px; font-size:16px;"><?=esc_html($product->get_name())?></h3>
-            <div style="font-weight:600; color:#d00;"><?=$price_html ?></div>
-            </a>
+            <div style="padding:15px;">
+                <h3 style="margin:0 0 8px; font-size:16px;"><?=esc_html($product->get_name())?></h3>
+                <div>
+                    <del style="font-weight:600; color:#999;"><?=$price_html ?></del> <span style="font-weight:600; color:#d00;"><?=wc_price($product->get_price() * 0.6) ?></span>
+                    <span style="font-weight:400; color:#d00; font-size: 12px;">(ลด 40 %)</span>
+                </div>
+                </a>
+                <div style="margin-top:10px;">
+                    <a href="?add-to-cart=<?=$product_id?>" 
+                    data-quantity="1" 
+                    class="button product_type_simple add_to_cart_button ajax_add_to_cart btn-primary" 
+                    data-product_id="<?=$product_id?>" 
+                    aria-label="Add &quot;<?=$product->get_name()?>&quot; to your cart">
+                    เพิ่มลงในตะกร้า
+                    </a>
+                </div>
+            </div>
         </div>
     <?php
     }
-
-    echo '</div>';
+    ?>
+    </div>
+    <style>
+        .add_to_cart_button {
+            font-size: 14px;
+            margin-right: 10px;
+            background: transparent;
+            border: 1.5px solid #219DD9;
+            color: #219DD9;
+            border-radius: 10px;
+            padding: 10px 15px;
+        }
+        .add_to_cart_button:before {
+            background: #219DD9;
+            border-radius: 10px;
+        }
+        .add_to_cart_button.btn-primary:hover {
+            border-color: #219DD9 !important;
+        }
+    </style>
+    <?php
     return ob_get_clean();
 }
 
@@ -667,10 +700,10 @@ add_action('woocommerce_after_cart_table', 'wp_cart_coupon_lucky_deal');
 function wp_cart_coupon_lucky_deal() {
     if (WC()->cart->is_empty()) return;
 
-    // 1. เช็คก่อนว่า User คนนี้ทำดีลหมดอายุไปหรือยัง
+    // เช็คก่อนว่า User คนนี้ทำดีลหมดอายุไปหรือยัง
     if (!session_id()) session_start();
     if (isset($_SESSION['worldchem_addon_deal_is_expired']) && $_SESSION['worldchem_addon_deal_is_expired'] === true) {
-        return; // ⛔️ ถ้าหมดเวลาแล้ว ไม่ต้องโชว์อะไรเลย จบงาน!
+        return;
     }
     ?>
     <style>
@@ -872,14 +905,10 @@ function smart_auto_addon_deal_handler() {
     if (!session_id()) session_start();
     $category_slug = 'addon-deals';
 
-    // 1. เช็คว่าดีลหมดอายุไปแล้วหรือยัง (จาก Session ที่เราตั้งไว้)
     $is_expired = (isset($_SESSION['worldchem_addon_deal_is_expired']) && $_SESSION['worldchem_addon_deal_is_expired'] === true);
 
-    // 2. ดึงคูปองดีลทั้งหมดที่ใช้ (หรือค้าง) อยู่ตอนนี้
     $applied_coupons = WC()->cart->get_applied_coupons();
 
-    // --- 🚨 กรณีที่ "ดีลหมดอายุ" หรือ "ไม่มีสินค้าหลัก" ---
-    // เราจะกวาดล้างคูปอง D20- ทิ้งทั้งหมด
     $has_main_product = false;
     foreach (WC()->cart->get_cart() as $cart_item) {
         if (!has_term($category_slug, 'product_cat', $cart_item['product_id'])) {
@@ -894,10 +923,9 @@ function smart_auto_addon_deal_handler() {
                 WC()->cart->remove_coupon($code);
             }
         }
-        return; // จบการทำงาน ไม่ต้องไปเช็คยัดคูปองเพิ่มแล้ว
+        return;
     }
     
-    // 1. ตรวจสอบว่าในตะกร้ามี "สินค้าหลัก" หรือไม่ (สินค้าที่ไม่ได้อยู่ในหมวด addon-deals)
     $has_main_product = false;
     foreach (WC()->cart->get_cart() as $cart_item) {
         if (!has_term($category_slug, 'product_cat', $cart_item['product_id'])) {
@@ -906,20 +934,17 @@ function smart_auto_addon_deal_handler() {
         }
     }
 
-    // 2. ดึงคูปองดีลทั้งหมดที่ใช้อยู่ตอนนี้
     $applied_coupons = WC()->cart->get_applied_coupons();
 
-    // --- กรณีที่ 1: ไม่มีสินค้าหลัก (ล้างบางคูปอง) ---
     if (!$has_main_product) {
         foreach ($applied_coupons as $code) {
             if (stripos($code, 'D20-') === 0) {
                 WC()->cart->remove_coupon($code);
             }
         }
-        return; // จบการทำงาน ไม่ต้องไปเช็คยัดคูปองเพิ่ม
+        return;
     }
 
-    // --- กรณีที่ 2: มีสินค้าหลักครบถ้วน (ใส่คูปองให้ตามปกติ) ---
     $addon_product_ids = $wpdb->get_col($wpdb->prepare("
         SELECT p.ID FROM {$wpdb->prefix}posts p
         INNER JOIN {$wpdb->prefix}term_relationships tr ON (p.ID = tr.object_id)
