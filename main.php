@@ -47,6 +47,9 @@ function woocommerce_addon_deals_setting_page() {
             width: 100%;
             text-decoration: none;
         }
+        .leftside a.active {
+            background: #fff;
+        }
         .leftside a:hover {
             background: #fff;
             cursor: pointer;
@@ -90,9 +93,9 @@ function woocommerce_addon_deals_setting_page() {
         <div style="display: flex;">
             <div class="leftside">
                 <h1>WooCommerce Addon Deals</h1>
-                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings&option=addon_by_slug">📦 Deals แบบกลุ่ม</a>
-                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings&option=addon_by_id">🎁 Deals แบบรายชิ้น</a>
-                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings">📜 คู่มือการใช้งาน</a>
+                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings&option=addon_by_slug" <?php if(isset($_GET['option']) && $_GET['option'] == "addon_by_slug") { echo "class='active'"; } ?>>📦 Deals แบบกลุ่ม</a>
+                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings&option=addon_by_id" <?php if(isset($_GET['option']) && $_GET['option'] == "addon_by_id") { echo "class='active'"; } ?>>🎁 Deals แบบรายชิ้น</a>
+                <a href="/wp-admin/admin.php?page=woocommerce-addon-deals-settings" <?php if(!isset($_GET['option'])) { echo "class='active'"; } ?>>📜 คู่มือการใช้งาน</a>
             </div>
             <div class="container">
                 <?php
