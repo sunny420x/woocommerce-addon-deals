@@ -80,7 +80,7 @@ function woocommerce_addon_deals_setting_page() {
         }
     </style>
     <div class="white-label-zone no-print">
-        <span style="padding: 60px 10px 60px 40px;float: left;font-size: 60px;">🛒</span>
+        <span style="padding: 40px 10px 40px 40px;float: left;font-size: 60px;">🛒</span>
         <div style="padding: 20px 0;">
             <h1>WooCommerce Addon Deals</h1>
             <p>ระบบสิทธิพิเศษ Addon Deals สำหรับ WooCommerce บน WordPress ประกอบไปด้วย คะแนนและระดับของสมาชิก แลกคะแนนเป็นส่วนลด ส่วนลดสำหรับสินค้าพิเศษ ส่วนลดสำหรับ Brand พิเศษ เป็นต้น
