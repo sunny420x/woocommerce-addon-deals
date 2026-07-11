@@ -144,9 +144,7 @@ function woocommerce_addon_deals_setting_page() {
                         <input type="number" name="addon_deal_timeout" value="<?php echo esc_attr(get_option('addon_deal_timeout', 180)); ?>" />
                         <h2>ภาพ Banner ดีลพิเศษ:</h2>
                         <div class="banner-upload-wrapper">
-                            <input type="text" name="addon_deal_banner_url" id="addon_deal_banner_url" 
-                                value="<?php echo esc_attr(get_option('addon_deal_banner_url', '')); ?>" 
-                                style="width: 70%;" />
+                            <input type="text" name="addon_deal_banner_url" id="addon_deal_banner_url" value="<?php echo esc_attr(get_option('addon_deal_banner_url', '')); ?>" style="width: 70%;" />
                             
                             <button type="button" class="button" id="upload_banner_button">เลือกรูปภาพ...</button>
                             
@@ -159,8 +157,6 @@ function woocommerce_addon_deals_setting_page() {
                         </div>
                         <br>
                         <?php submit_button('บันทึกการเปลี่ยนแปลง'); ?>
-                        <hr>
-                        <p>Github Repository: <a href="https://github.com/sunny420x/woocommerce-addon-deals" target="_blank">github.com/sunny420x/woocommerce-addon-deals</a></p>
                     </form>
                     <script>
                         function initCategorySlug() {
