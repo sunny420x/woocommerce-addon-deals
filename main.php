@@ -6,6 +6,8 @@
  * Author: Jirakit Pawnsakunrungrot
  * Author URI: https://www.linkedin.com/in/sunny-jirakit
  * Plugin URI: https://github.com/sunny420x/woocommerce-addon-deals
+ * GitHub Plugin URI: https://github.com/sunny420x/woocommerce-addon-deals
+ * Primary Branch: master
  */
 
 add_action('admin_menu', 'worldchem_addon_deals_menu');
